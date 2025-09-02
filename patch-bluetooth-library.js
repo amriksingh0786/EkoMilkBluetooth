@@ -16,14 +16,14 @@ if (fs.existsSync(buildGradlePath)) {
   
   let content = fs.readFileSync(buildGradlePath, 'utf8');
   
-  // Add namespace if not present
+  // Add namespace if not present (must match actual Java package)
   if (!content.includes('namespace')) {
     content = content.replace(
       /android\s*\{/,
       `android {
     compileSdkVersion 34
     buildToolsVersion "33.0.0"
-    namespace 'io.github.kenjdavidson.bluetooth'`
+    namespace 'kjd.reactnative.bluetooth'`
     );
     
     // Update SDK versions
@@ -110,19 +110,19 @@ function fixBuildConfigImports() {
         
         let fileModified = false;
         
-        // Fix existing BuildConfig imports
-        if (content.includes('import kjd.reactnative.bluetooth.BuildConfig;')) {
+        // Fix existing BuildConfig imports (should be same namespace as package)
+        if (content.includes('import io.github.kenjdavidson.bluetooth.BuildConfig;')) {
           content = content.replace(
-            /import kjd\.reactnative\.bluetooth\.BuildConfig;/g,
-            'import io.github.kenjdavidson.bluetooth.BuildConfig;'
+            /import io\.github\.kenjdavidson\.bluetooth\.BuildConfig;/g,
+            'import kjd.reactnative.bluetooth.BuildConfig;'
           );
           fileModified = true;
         }
         
         // Add BuildConfig import if file uses BuildConfig but doesn't have import
         if (content.includes('BuildConfig.DEBUG') && 
-            !content.includes('import io.github.kenjdavidson.bluetooth.BuildConfig;') &&
-            !content.includes('import kjd.reactnative.bluetooth.BuildConfig;')) {
+            !content.includes('import kjd.reactnative.bluetooth.BuildConfig;') &&
+            !content.includes('import io.github.kenjdavidson.bluetooth.BuildConfig;')) {
           
           // Find the package declaration and add import after it
           const packageMatch = content.match(/package\s+[^;]+;/);
@@ -130,7 +130,7 @@ function fixBuildConfigImports() {
             const packageStatement = packageMatch[0];
             content = content.replace(
               packageStatement,
-              packageStatement + '\n\nimport io.github.kenjdavidson.bluetooth.BuildConfig;'
+              packageStatement + '\n\nimport kjd.reactnative.bluetooth.BuildConfig;'
             );
             fileModified = true;
           }
