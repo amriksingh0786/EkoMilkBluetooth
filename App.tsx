@@ -27,12 +27,6 @@ export default function App(): React.JSX.Element {
 
   const initializeBluetooth = async () => {
     try {
-      const available = await RNBluetoothClassic.isBluetoothAvailable();
-      if (!available) {
-        Alert.alert('Bluetooth Not Available', 'Bluetooth is not available on this device');
-        return;
-      }
-
       const enabled = await RNBluetoothClassic.isBluetoothEnabled();
       if (!enabled) {
         Alert.alert('Bluetooth Disabled', 'Please enable Bluetooth to connect to EkoMilk device');
