@@ -31,6 +31,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 33.0.0
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -44,6 +47,11 @@ jobs:
 
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
+
+      - name: Clean Gradle cache
+        run: |
+          cd android
+          ./gradlew clean
 
       - name: Build Debug APK
         run: |
