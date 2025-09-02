@@ -63,21 +63,6 @@ jobs:
           cd android
           ./gradlew clean
 
-      - name: Generate JavaScript bundle
-        run: |
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res
-
-      - name: Verify JavaScript bundle
-        run: |
-          echo "Checking if JavaScript bundle was created:"
-          ls -la android/app/src/main/assets/
-          echo "Bundle size:"
-          du -h android/app/src/main/assets/index.android.bundle
 
       - name: Build Release APK
         run: |
