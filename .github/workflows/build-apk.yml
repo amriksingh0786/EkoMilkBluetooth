@@ -55,11 +55,9 @@ jobs:
         run: chmod +x ./android/gradlew
 
       - name: Clean Gradle cache
-        run: |
-          cd android
-          ./gradlew clean
+        run: ./android/gradlew -p android clean
 
-      - name: Generate JavaScript bundle and Build Release APK
+      - name: Generate JavaScript bundle
         run: |
           npx react-native bundle \
             --platform android \
@@ -67,8 +65,16 @@ jobs:
             --entry-file index.js \
             --bundle-output android/app/src/main/assets/index.android.bundle \
             --assets-dest android/app/src/main/res
-          cd android
-          ./gradlew assembleRelease
+
+      - name: Verify JavaScript bundle
+        run: |
+          echo "Checking if JavaScript bundle was created:"
+          ls -la android/app/src/main/assets/
+          echo "Bundle size:"
+          du -h android/app/src/main/assets/index.android.bundle
+
+      - name: Build Release APK
+        run: ./android/gradlew -p android assembleRelease
 
       - name: List generated APK files
         run: |
