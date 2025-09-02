@@ -51,9 +51,10 @@ jobs:
       - name: Create assets directory and fix React Native paths
         run: |
           mkdir -p android/app/src/main/assets
-          # Create symbolic link to fix React Native plugin path resolution
+          # Create symbolic links to fix React Native plugin path resolution
           cd android
           ln -sf ../node_modules node_modules
+          ln -sf ../index.js index.js
 
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
