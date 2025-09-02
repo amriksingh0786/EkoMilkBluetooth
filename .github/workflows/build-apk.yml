@@ -48,14 +48,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Create assets directory
-        run: mkdir -p android/app/src/main/assets
+      - name: Create assets directory and fix React Native paths
+        run: |
+          mkdir -p android/app/src/main/assets
+          # Create symbolic link to fix React Native plugin path resolution
+          cd android
+          ln -sf ../node_modules node_modules
 
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
 
       - name: Clean Gradle cache
-        run: ./android/gradlew -p android clean
+        run: |
+          cd android
+          ./gradlew clean
 
       - name: Generate JavaScript bundle
         run: |
@@ -74,7 +80,9 @@ jobs:
           du -h android/app/src/main/assets/index.android.bundle
 
       - name: Build Release APK
-        run: ./android/gradlew -p android assembleRelease
+        run: |
+          cd android
+          ./gradlew assembleRelease
 
       - name: List generated APK files
         run: |
