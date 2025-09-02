@@ -51,15 +51,6 @@ jobs:
       - name: Create assets directory
         run: mkdir -p android/app/src/main/assets
 
-      - name: Generate JavaScript bundle
-        run: |
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output android/app/src/main/assets/index.android.bundle \
-            --assets-dest android/app/src/main/res
-
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
 
@@ -68,8 +59,14 @@ jobs:
           cd android
           ./gradlew clean
 
-      - name: Build Release APK
+      - name: Generate JavaScript bundle and Build Release APK
         run: |
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res
           cd android
           ./gradlew assembleRelease
 
