@@ -55,6 +55,8 @@ jobs:
           cd android
           ln -sf ../node_modules node_modules
           ln -sf ../index.js index.js
+          ln -sf ../App.tsx App.tsx
+          ln -sf ../app.json app.json
 
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
