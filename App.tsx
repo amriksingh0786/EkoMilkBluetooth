@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   StyleSheet,
   Text,
@@ -23,10 +23,6 @@ export default function App(): React.JSX.Element {
   const [isConnecting, setIsConnecting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    initializeBluetooth();
-  }, []);
-
   const requestBluetoothPermissions = async () => {
     if (Platform.OS === 'android' && Platform.Version >= 31) {
       try {
@@ -37,13 +33,13 @@ export default function App(): React.JSX.Element {
         ]);
 
         const allGranted = Object.values(granted).every(
-          permission => permission === PermissionsAndroid.RESULTS.GRANTED
+          permission => permission === PermissionsAndroid.RESULTS.GRANTED,
         );
 
         if (!allGranted) {
           Alert.alert(
             'Permissions Required',
-            'Bluetooth permissions are required to connect to EkoMilk device. Please grant permissions in Settings.'
+            'Bluetooth permissions are required to connect to EkoMilk device. Please grant permissions in Settings.',
           );
           return false;
         }
@@ -59,9 +55,10 @@ export default function App(): React.JSX.Element {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
-            message: 'Bluetooth requires location permission to scan for devices',
+            message:
+              'Bluetooth requires location permission to scan for devices',
             buttonPositive: 'OK',
-          }
+          },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch (error) {
@@ -70,27 +67,6 @@ export default function App(): React.JSX.Element {
       }
     }
     return true;
-  };
-
-  const initializeBluetooth = async () => {
-    try {
-      // Request permissions first
-      const hasPermissions = await requestBluetoothPermissions();
-      if (!hasPermissions) {
-        return;
-      }
-
-      const enabled = await RNBluetoothClassic.isBluetoothEnabled();
-      if (!enabled) {
-        Alert.alert('Bluetooth Disabled', 'Please enable Bluetooth to connect to EkoMilk device');
-        return;
-      }
-
-      await scanForDevices();
-    } catch (error: any) {
-      console.error('Error initializing Bluetooth:', error);
-      Alert.alert('Bluetooth Error', 'Failed to initialize Bluetooth: ' + error.message);
-    }
   };
 
   const scanForDevices = async () => {
@@ -106,10 +82,41 @@ export default function App(): React.JSX.Element {
     }
   };
 
+  const initializeBluetooth = useCallback(async () => {
+    try {
+      // Request permissions first
+      const hasPermissions = await requestBluetoothPermissions();
+      if (!hasPermissions) {
+        return;
+      }
+
+      const enabled = await RNBluetoothClassic.isBluetoothEnabled();
+      if (!enabled) {
+        Alert.alert(
+          'Bluetooth Disabled',
+          'Please enable Bluetooth to connect to EkoMilk device',
+        );
+        return;
+      }
+
+      await scanForDevices();
+    } catch (error: any) {
+      console.error('Error initializing Bluetooth:', error);
+      Alert.alert(
+        'Bluetooth Error',
+        'Failed to initialize Bluetooth: ' + error.message,
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    initializeBluetooth();
+  }, [initializeBluetooth]);
+
   const connectToDevice = async (device: any) => {
     try {
       setIsConnecting(true);
-      
+
       if (connectedDevice) {
         await disconnectDevice();
       }
@@ -119,7 +126,7 @@ export default function App(): React.JSX.Element {
       if (connected) {
         setConnectedDevice(device);
         Alert.alert('Connected', `Successfully connected to ${device.name}`);
-        
+
         // Set up data listener
         device.onDataReceived((event: any) => {
           const receivedData = event.data;
@@ -157,7 +164,7 @@ export default function App(): React.JSX.Element {
       // Parse EkoMilk data format (e.g., "FAT=3.5% SNF=8.2% DENSITY=1.028")
       const parsedData: any = {};
       const dataString = data.toString().trim();
-      
+
       // Extract common milk parameters
       const patterns = {
         fat: /FAT[=:]\s*([0-9.]+)%?/i,
@@ -188,15 +195,14 @@ export default function App(): React.JSX.Element {
     }
   };
 
-  const renderDevice = ({ item }: { item: any }) => (
+  const renderDevice = ({item}: {item: any}) => (
     <TouchableOpacity
       style={[
         styles.deviceItem,
-        connectedDevice?.address === item.address && styles.connectedDevice
+        connectedDevice?.address === item.address && styles.connectedDevice,
       ]}
       onPress={() => connectToDevice(item)}
-      disabled={isConnecting}
-    >
+      disabled={isConnecting}>
       <Text style={styles.deviceName}>{item.name || 'Unknown Device'}</Text>
       <Text style={styles.deviceAddress}>{item.address}</Text>
       {connectedDevice?.address === item.address && (
@@ -214,17 +220,18 @@ export default function App(): React.JSX.Element {
     </View>
   );
 
+  const getStatusColor = () => (connectedDevice ? '#4CAF50' : '#f44336');
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#2196F3" />
-      
+
       <View style={styles.header}>
         <Text style={styles.title}>EkoMilk Bluetooth Reader</Text>
         {connectedDevice && (
           <TouchableOpacity
             style={styles.disconnectButton}
-            onPress={disconnectDevice}
-          >
+            onPress={disconnectDevice}>
             <Text style={styles.disconnectButtonText}>Disconnect</Text>
           </TouchableOpacity>
         )}
@@ -236,10 +243,13 @@ export default function App(): React.JSX.Element {
           <Text style={styles.sectionTitle}>Paired Bluetooth Devices</Text>
           <FlatList
             data={devices}
-            keyExtractor={(item) => item.address}
+            keyExtractor={item => item.address}
             renderItem={renderDevice}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={scanForDevices} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={scanForDevices}
+              />
             }
             ListEmptyComponent={
               <Text style={styles.emptyText}>
@@ -287,16 +297,14 @@ export default function App(): React.JSX.Element {
         {/* Connection Status */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Connection Status</Text>
-          <Text style={[
-            styles.statusText,
-            { color: connectedDevice ? '#4CAF50' : '#f44336' }
-          ]}>
+          <Text style={[styles.statusText, {color: getStatusColor()}]}>
             {connectedDevice
               ? `Connected to ${connectedDevice.name}`
-              : 'Not connected'
-            }
+              : 'Not connected'}
           </Text>
-          {isConnecting && <Text style={styles.connectingText}>Connecting...</Text>}
+          {isConnecting && (
+            <Text style={styles.connectingText}>Connecting...</Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -341,7 +349,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,

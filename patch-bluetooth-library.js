@@ -8,14 +8,22 @@
 const fs = require('fs');
 const path = require('path');
 
-const buildGradlePath = path.join(__dirname, 'node_modules/react-native-bluetooth-classic/android/build.gradle');
-const manifestPath = path.join(__dirname, 'node_modules/react-native-bluetooth-classic/android/src/main/AndroidManifest.xml');
+const buildGradlePath = path.join(
+  __dirname,
+  'node_modules/react-native-bluetooth-classic/android/build.gradle',
+);
+const manifestPath = path.join(
+  __dirname,
+  'node_modules/react-native-bluetooth-classic/android/src/main/AndroidManifest.xml',
+);
 
 if (fs.existsSync(buildGradlePath)) {
-  console.log('🔧 Patching react-native-bluetooth-classic for AGP 8.0+ compatibility...');
-  
+  console.log(
+    '🔧 Patching react-native-bluetooth-classic for AGP 8.0+ compatibility...',
+  );
+
   let content = fs.readFileSync(buildGradlePath, 'utf8');
-  
+
   // Add namespace if not present (must match actual Java package)
   if (!content.includes('namespace')) {
     content = content.replace(
@@ -23,25 +31,28 @@ if (fs.existsSync(buildGradlePath)) {
       `android {
     compileSdkVersion 34
     buildToolsVersion "33.0.0"
-    namespace 'kjd.reactnative.bluetooth'`
+    namespace 'kjd.reactnative.bluetooth'`,
     );
-    
+
     // Update SDK versions
     content = content.replace(/compileSdkVersion 29/, 'compileSdkVersion 34');
     content = content.replace(/targetSdkVersion 29/, 'targetSdkVersion 34');
     content = content.replace(/minSdkVersion 16/, 'minSdkVersion 21');
-    content = content.replace(/buildToolsVersion "28.0.3"/, 'buildToolsVersion "33.0.0"');
-    
+    content = content.replace(
+      /buildToolsVersion "28.0.3"/,
+      'buildToolsVersion "33.0.0"',
+    );
+
     // Update Java compatibility
     content = content.replace(
       /sourceCompatibility = '1\.8'/,
-      'sourceCompatibility JavaVersion.VERSION_11'
+      'sourceCompatibility JavaVersion.VERSION_11',
     );
     content = content.replace(
       /targetCompatibility = '1\.8'/,
-      'targetCompatibility JavaVersion.VERSION_11'
+      'targetCompatibility JavaVersion.VERSION_11',
     );
-    
+
     fs.writeFileSync(buildGradlePath, content);
     console.log('✅ Successfully patched react-native-bluetooth-classic');
   } else {
@@ -53,20 +64,19 @@ if (fs.existsSync(buildGradlePath)) {
 
 // Patch AndroidManifest.xml to remove deprecated package attribute
 if (fs.existsSync(manifestPath)) {
-  console.log('🔧 Patching AndroidManifest.xml to remove deprecated package attribute...');
-  
+  console.log(
+    '🔧 Patching AndroidManifest.xml to remove deprecated package attribute...',
+  );
+
   let manifestContent = fs.readFileSync(manifestPath, 'utf8');
-  
+
   // Check if already patched
   if (!manifestContent.includes('package="kjd.reactnative.bluetooth"')) {
     console.log('✅ AndroidManifest.xml already patched');
   } else {
     // Remove the package attribute from the manifest tag
-    manifestContent = manifestContent.replace(
-      /package="[^"]*"/g,
-      ''
-    );
-    
+    manifestContent = manifestContent.replace(/package="[^"]*"/g, '');
+
     // Clean up any double spaces or trailing spaces in the manifest tag
     manifestContent = manifestContent.replace(
       /<manifest\s+([^>]*)\s*>/,
@@ -74,22 +84,29 @@ if (fs.existsSync(manifestPath)) {
         // Clean up whitespace in attributes
         const cleanAttributes = attributes.replace(/\s+/g, ' ').trim();
         return `<manifest ${cleanAttributes}>`;
-      }
+      },
     );
-    
+
     fs.writeFileSync(manifestPath, manifestContent, 'utf8');
     console.log('✅ AndroidManifest.xml patched successfully!');
   }
 } else {
-  console.warn('⚠️ react-native-bluetooth-classic AndroidManifest.xml not found. Skipping manifest patch.');
+  console.warn(
+    '⚠️ react-native-bluetooth-classic AndroidManifest.xml not found. Skipping manifest patch.',
+  );
 }
 
 // Fix BuildConfig imports in Java files
-const javaSourceDir = path.join(__dirname, 'node_modules/react-native-bluetooth-classic/android/src/main/java');
+const javaSourceDir = path.join(
+  __dirname,
+  'node_modules/react-native-bluetooth-classic/android/src/main/java',
+);
 
 function fixBuildConfigImports() {
   if (!fs.existsSync(javaSourceDir)) {
-    console.warn('⚠️ Java source directory not found. Skipping BuildConfig import fixes.');
+    console.warn(
+      '⚠️ Java source directory not found. Skipping BuildConfig import fixes.',
+    );
     return;
   }
 
@@ -98,44 +115,52 @@ function fixBuildConfigImports() {
 
   function processDirectory(currentDir) {
     const files = fs.readdirSync(currentDir);
-    
+
     for (const file of files) {
       const fullPath = path.join(currentDir, file);
       const stat = fs.statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         processDirectory(fullPath);
       } else if (file.endsWith('.java')) {
         let content = fs.readFileSync(fullPath, 'utf8');
-        
+
         let fileModified = false;
-        
+
         // Fix existing BuildConfig imports (should be same namespace as package)
-        if (content.includes('import io.github.kenjdavidson.bluetooth.BuildConfig;')) {
+        if (
+          content.includes(
+            'import io.github.kenjdavidson.bluetooth.BuildConfig;',
+          )
+        ) {
           content = content.replace(
             /import io\.github\.kenjdavidson\.bluetooth\.BuildConfig;/g,
-            'import kjd.reactnative.bluetooth.BuildConfig;'
+            'import kjd.reactnative.bluetooth.BuildConfig;',
           );
           fileModified = true;
         }
-        
+
         // Add BuildConfig import if file uses BuildConfig but doesn't have import
-        if (content.includes('BuildConfig.DEBUG') && 
-            !content.includes('import kjd.reactnative.bluetooth.BuildConfig;') &&
-            !content.includes('import io.github.kenjdavidson.bluetooth.BuildConfig;')) {
-          
+        if (
+          content.includes('BuildConfig.DEBUG') &&
+          !content.includes('import kjd.reactnative.bluetooth.BuildConfig;') &&
+          !content.includes(
+            'import io.github.kenjdavidson.bluetooth.BuildConfig;',
+          )
+        ) {
           // Find the package declaration and add import after it
           const packageMatch = content.match(/package\s+[^;]+;/);
           if (packageMatch) {
             const packageStatement = packageMatch[0];
             content = content.replace(
               packageStatement,
-              packageStatement + '\n\nimport kjd.reactnative.bluetooth.BuildConfig;'
+              packageStatement +
+                '\n\nimport kjd.reactnative.bluetooth.BuildConfig;',
             );
             fileModified = true;
           }
         }
-        
+
         if (fileModified) {
           fs.writeFileSync(fullPath, content, 'utf8');
           filesFixed++;
@@ -146,7 +171,7 @@ function fixBuildConfigImports() {
   }
 
   processDirectory(javaSourceDir);
-  
+
   if (filesFixed > 0) {
     console.log(`✅ Fixed BuildConfig imports in ${filesFixed} Java files`);
   } else {
