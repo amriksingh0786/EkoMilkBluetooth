@@ -10,6 +10,8 @@ import {
   SafeAreaView,
   RefreshControl,
   StatusBar,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
 
@@ -25,8 +27,59 @@ export default function App(): React.JSX.Element {
     initializeBluetooth();
   }, []);
 
+  const requestBluetoothPermissions = async () => {
+    if (Platform.OS === 'android' && Platform.Version >= 31) {
+      try {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        ]);
+
+        const allGranted = Object.values(granted).every(
+          permission => permission === PermissionsAndroid.RESULTS.GRANTED
+        );
+
+        if (!allGranted) {
+          Alert.alert(
+            'Permissions Required',
+            'Bluetooth permissions are required to connect to EkoMilk device. Please grant permissions in Settings.'
+          );
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('Permission request error:', error);
+        return false;
+      }
+    } else if (Platform.OS === 'android') {
+      // For Android < 12, request location permission
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'Bluetooth requires location permission to scan for devices',
+            buttonPositive: 'OK',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (error) {
+        console.error('Permission request error:', error);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const initializeBluetooth = async () => {
     try {
+      // Request permissions first
+      const hasPermissions = await requestBluetoothPermissions();
+      if (!hasPermissions) {
+        return;
+      }
+
       const enabled = await RNBluetoothClassic.isBluetoothEnabled();
       if (!enabled) {
         Alert.alert('Bluetooth Disabled', 'Please enable Bluetooth to connect to EkoMilk device');
