@@ -130,9 +130,13 @@ export default function App(): React.JSX.Element {
         // Set up data listener
         device.onDataReceived((event: any) => {
           const receivedData = event.data;
-          console.log('Raw HC-05 data:', receivedData);
-          console.log('Data type:', typeof receivedData);
-          console.log('Data length:', receivedData?.length);
+          console.log('🔵 HC-05 Data Received Event:', {
+            timestamp: new Date().toISOString(),
+            event,
+            data: receivedData,
+            dataType: typeof receivedData,
+            dataLength: receivedData?.length
+          });
           setMessages(prev => [...prev.slice(-50), receivedData]); // Keep last 50 messages
           parseEkoMilkData(receivedData);
         });
@@ -145,6 +149,15 @@ export default function App(): React.JSX.Element {
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const testDataParsing = () => {
+    const sampleData = "FAT=3.5% SNF=8.2% DENSITY=1.028 PROTEIN=3.1% LACTOSE=4.8% WATER=87.5% TEMP=25°C";
+    console.log('🧪 Test Data Parsing initiated with sample data:', sampleData);
+    console.log('🧪 Current milkData state before test:', milkData);
+    parseEkoMilkData(sampleData);
+    setMessages(prev => [...prev.slice(-50), `[TEST] ${sampleData}`]);
+    console.log('🧪 Test data added to messages, parsing should complete shortly');
   };
 
   const disconnectDevice = async () => {
@@ -167,7 +180,13 @@ export default function App(): React.JSX.Element {
       // Parse EkoMilk data format (e.g., "FAT=3.5% SNF=8.2% DENSITY=1.028")
       const parsedData: any = {};
       const dataString = data.toString().trim();
-      console.log('Parsing data:', dataString);
+      console.log('🟡 parseEkoMilkData called with:', {
+        timestamp: new Date().toISOString(),
+        rawData: data,
+        dataType: typeof data,
+        dataLength: data?.length,
+        trimmedString: dataString
+      });
 
       // Extract common milk parameters
       const patterns = {
@@ -180,23 +199,30 @@ export default function App(): React.JSX.Element {
         temperature: /TEMP[=:]\s*([0-9.]+)°?C?/i,
       };
 
+      console.log('🔍 Testing patterns against data:', dataString);
       Object.keys(patterns).forEach(key => {
-        const match = dataString.match(patterns[key as keyof typeof patterns]);
+        const pattern = patterns[key as keyof typeof patterns];
+        const match = dataString.match(pattern);
+        console.log(`🔍 Pattern ${key}:`, {
+          pattern: pattern.toString(),
+          match: match ? match[1] : null,
+          fullMatch: match
+        });
         if (match) {
           parsedData[key] = parseFloat(match[1]);
         }
       });
 
-      console.log('Parsed data:', parsedData);
+      console.log('✅ Final parsed data:', parsedData);
       if (Object.keys(parsedData).length > 0) {
-        console.log('Setting milk data:', parsedData);
+        console.log('✅ Setting milk data to state:', parsedData);
         setMilkData((prev: any) => ({
           ...prev,
           ...parsedData,
           lastUpdated: new Date().toLocaleTimeString(),
         }));
       } else {
-        console.log('No data matched parsing patterns');
+        console.log('❌ No data matched parsing patterns for string:', dataString);
       }
     } catch (error) {
       console.error('Error parsing milk data:', error);
@@ -265,6 +291,15 @@ export default function App(): React.JSX.Element {
               </Text>
             }
           />
+          {/* Test Button */}
+          {connectedDevice && (
+            <TouchableOpacity 
+              style={styles.testButton} 
+              onPress={testDataParsing}
+            >
+              <Text style={styles.testButtonText}>Test Data Parsing</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Milk Data Display */}
@@ -456,5 +491,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  testButton: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
