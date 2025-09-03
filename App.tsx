@@ -130,6 +130,9 @@ export default function App(): React.JSX.Element {
         // Set up data listener
         device.onDataReceived((event: any) => {
           const receivedData = event.data;
+          console.log('Raw HC-05 data:', receivedData);
+          console.log('Data type:', typeof receivedData);
+          console.log('Data length:', receivedData?.length);
           setMessages(prev => [...prev.slice(-50), receivedData]); // Keep last 50 messages
           parseEkoMilkData(receivedData);
         });
@@ -164,6 +167,7 @@ export default function App(): React.JSX.Element {
       // Parse EkoMilk data format (e.g., "FAT=3.5% SNF=8.2% DENSITY=1.028")
       const parsedData: any = {};
       const dataString = data.toString().trim();
+      console.log('Parsing data:', dataString);
 
       // Extract common milk parameters
       const patterns = {
@@ -183,12 +187,16 @@ export default function App(): React.JSX.Element {
         }
       });
 
+      console.log('Parsed data:', parsedData);
       if (Object.keys(parsedData).length > 0) {
+        console.log('Setting milk data:', parsedData);
         setMilkData((prev: any) => ({
           ...prev,
           ...parsedData,
           lastUpdated: new Date().toLocaleTimeString(),
         }));
+      } else {
+        console.log('No data matched parsing patterns');
       }
     } catch (error) {
       console.error('Error parsing milk data:', error);
