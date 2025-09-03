@@ -54,16 +54,16 @@ npm test
 # Lint code
 npm run lint
 
-# Build APK locally
-cd android && ./gradlew assembleDebug
+# Build APK locally (requires Java 17)
+cd android && JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home ./gradlew assembleDebug
 # APK location: android/app/build/outputs/apk/debug/app-debug.apk
 
-# Build Release APK
-cd android && ./gradlew assembleRelease
+# Build Release APK (requires Java 17)
+cd android && JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease
 # APK location: android/app/build/outputs/apk/release/app-release.apk
 
 # Clean build
-cd android && ./gradlew clean
+cd android && JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home ./gradlew clean
 ```
 
 ## Testing Bluetooth Functionality
