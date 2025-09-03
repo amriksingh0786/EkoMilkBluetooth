@@ -114,7 +114,8 @@ export default function App(): React.JSX.Element {
         await disconnectDevice();
       }
 
-      const connected = await device.connect();
+      // Fix: Pass empty options object to prevent NullPointerException
+      const connected = await device.connect({});
       if (connected) {
         setConnectedDevice(device);
         Alert.alert('Connected', `Successfully connected to ${device.name}`);
